@@ -810,24 +810,12 @@ return (
 
                 {files.length > 0 && !loading && !analysis && (
                     <div className="no-print space-y-3">
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                id="debugMode"
-                                checked={debugMode}
-                                onChange={(e) => setDebugMode(e.target.checked)}
-                                className="w-4 h-4 text-emerald-600"
-                            />
-                            <label htmlFor="debugMode" className="text-sm text-gray-600">
-                                Mode debug (afficher le texte extrait)
-                            </label>
-                        </div>
                         <button
                             onClick={analyzeWithClaude}
                             className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                             style={{boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'}}
                         >
-                            {debugMode ? 'Extraire le texte' : 'Analyser les diagnostics'}
+                            Analyser les diagnostics
                         </button>
                     </div>
                 )}
@@ -855,23 +843,6 @@ return (
 
                 {analysis && (
                     <div className="mt-8 space-y-6">
-                        <div className="no-print flex justify-end mb-4">
-                            <button
-                                onClick={() => setShowRawJSON(!showRawJSON)}
-                                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-                            >
-                                {showRawJSON ? 'Masquer' : 'Voir'} le JSON brut
-                            </button>
-                        </div>
-
-                        {showRawJSON && (
-                            <div className="no-print mb-6 p-4 bg-gray-900 rounded-lg">
-                                <pre className="text-xs text-green-400 overflow-auto max-h-96">
-                                    {JSON.stringify(analysis, null, 2)}
-                                </pre>
-                            </div>
-                        )}
-
                         <div className="avoid-break bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-4 sm:p-6 shadow-sm">
                             <div className="flex items-center gap-3 mb-4">
                                 <Home className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
