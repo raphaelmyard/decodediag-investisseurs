@@ -146,6 +146,13 @@ const ExternalLink = ({ className }) => (
     </svg>
 );
 
+const XIcon = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+);
+
 const DecodeDiag = () => {
   const [files, setFiles] = useState([]);
   const [analysis, setAnalysis] = useState(null);
@@ -241,6 +248,11 @@ const handleFileUpload = (e) => {
     setTimeout(() => {
       setUploadingFiles(false);
     }, 100);
+  };
+
+  const removeFile = (indexToRemove) => {
+    setFiles(prevFiles => prevFiles.filter((_, index) => index !== indexToRemove));
+    setError(null);
   };
 
   const extractTextFromPDF = async (file) => {
@@ -867,12 +879,19 @@ return (
                         <h3 className="font-semibold text-gray-800 mb-3">Fichiers sélectionnés:</h3>
                         <div className="space-y-2">
                             {files.map((file, idx) => (
-                                <div key={idx} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                    <FileText className="w-5 h-5 text-emerald-600" />
-                                    <span className="text-gray-800">{file.name}</span>
-                                    <span className="text-sm text-gray-500 ml-auto">
+                                <div key={idx} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200 group hover:border-emerald-300 transition-colors">
+                                    <FileText className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                                    <span className="text-gray-800 flex-1 truncate">{file.name}</span>
+                                    <span className="text-sm text-gray-500 flex-shrink-0">
                                         {(file.size / 1024 / 1024).toFixed(1)} MB
                                     </span>
+                                    <button
+                                        onClick={() => removeFile(idx)}
+                                        className="flex-shrink-0 p-1 rounded-full hover:bg-red-100 transition-colors group"
+                                        title="Retirer ce fichier"
+                                    >
+                                        <XIcon className="w-4 h-4 text-gray-400 group-hover:text-red-600" />
+                                    </button>
                                 </div>
                             ))}
                         </div>
