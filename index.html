@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DecodeDiag MVP - Analyseur de diagnostics immobiliers</title>
+    
+    <!-- React 18 -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel pour JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .avoid-break {
+    page-break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+  
+  body {
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+  
+  .shadow-xl, .shadow-lg {
+    box-shadow: none !important;
+  }
+  
+  .rounded-2xl, .rounded-xl {
+    border-radius: 4px !important;
+  }
+  
+  .border {
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  @page {
+    margin: 1.5cm;
+  }
+}
+</style>
+    
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+
+const { useState, useEffect } = React;
+
+// Icônes SVG
+const Upload = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="17 8 12 3 7 8"></polyline>
+        <line x1="12" y1="3" x2="12" y2="15"></line>
+    </svg>
+);
+
+const FileText = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+    </svg>
+);
+
+const Loader = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="2" x2="12" y2="6"></line>
+        <line x1="12" y1="18" x2="12" y2="22"></line>
+        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+        <line x1="2" y1="12" x2="6" y2="12"></line>
+        <line x1="18" y1="12" x2="22" y2="12"></line>
+        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+    </svg>
+);
+
+const CheckCircle = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+);
+
+const XCircle = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="15" y1="9" x2="9" y2="15"></line>
+        <line x1="9" y1="9" x2="15" y2="15"></line>
+    </svg>
+);
+
+const AlertTriangle = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </svg>
+);
+
+const AlertCircle = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+);
+
+const Home = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+);
+
+const Calendar = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+    </svg>
+);
+
+const ExternalLink = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+        <polyline points="15 3 21 3 21 9"></polyline>
+        <line x1="10" y1="14" x2="21" y2="3"></line>
+    </svg>
+);
+
+const DecodeDiag = () => {
+  const [files, setFiles] = useState([]);
+  const [analysis, setAnalysis] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [progress, setProgress] = useState('');
+  const [error, setError] = useState(null);
+  const [pdfjsLib, setPdfjsLib] = useState(null);
+  const [isAppleDevice, setIsAppleDevice] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
+  const [extractedText, setExtractedText] = useState('');
+  const [showRawJSON, setShowRawJSON] = useState(false);
+
+  useEffect(() => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const isApple = /iPad|iPhone|iPod|Macintosh/.test(userAgent) && !window.MSStream;
+    setIsAppleDevice(isApple);
+    
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      setPdfjsLib(window.pdfjsLib);
+    }
+  }, []);
+
+const handleFileUpload = (e) => {
+    setUploadingFiles(true);
+    const uploadedFiles = Array.from(e.target.files).filter(f => f.type === 'application/pdf');
+    
+    if (uploadedFiles.length === 0) {
+      setError('Veuillez sélectionner des fichiers PDF');
+      setUploadingFiles(false);
+      return;
+    }
+    
+    if (uploadedFiles.length > 5) {
+      setError('Maximum 5 fichiers PDF');
+      setUploadingFiles(false);
+      return;
+    }
+    
+    setFiles(uploadedFiles);
+    setError(null);
+    setAnalysis(null);
+    
+    setTimeout(() => {
+      setUploadingFiles(false);
+    }, 100);
+  };
+
+  const extractTextFromPDF = async (file) => {
+    if (!pdfjsLib) {
+      throw new Error('PDF.js pas encore chargé');
+    }
+
+    setProgress(`Extraction du texte de ${file.name}...`);
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    
+    let fullText = `\n\n=== FICHIER: ${file.name} (${pdf.numPages} pages) ===\n\n`;
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      fullText += pageText + '\n\n';
+      
+      if (i % 10 === 0) {
+        setProgress(`${file.name}: page ${i}/${pdf.numPages}`);
+      }
+    }
+    
+    return fullText;
+  };
+
+const calculerNoteDPE = (consoPrimaireBrute, consoFinaleBrute, emissionsCO2Brute, surfaceNombre) => {
+    const consoPrimaire = Math.floor(consoPrimaireBrute / surfaceNombre);
+    const consoFinale = Math.floor(consoFinaleBrute / surfaceNombre);
+    const emissionsCO2 = Math.floor(emissionsCO2Brute / surfaceNombre);
+    
+    let scoreEnergie;
+    if (consoPrimaire <= 70) scoreEnergie = 1;
+    else if (consoPrimaire <= 110) scoreEnergie = 2;
+    else if (consoPrimaire <= 180) scoreEnergie = 3;
+    else if (consoPrimaire <= 250) scoreEnergie = 4;
+    else if (consoPrimaire <= 330) scoreEnergie = 5;
+    else if (consoPrimaire <= 420) scoreEnergie = 6;
+    else scoreEnergie = 7;
+    
+    let scoreGES;
+    if (emissionsCO2 <= 6) scoreGES = 1;
+    else if (emissionsCO2 <= 11) scoreGES = 2;
+    else if (emissionsCO2 <= 30) scoreGES = 3;
+    else if (emissionsCO2 <= 50) scoreGES = 4;
+    else if (emissionsCO2 <= 70) scoreGES = 5;
+    else if (emissionsCO2 <= 100) scoreGES = 6;
+    else scoreGES = 7;
+    
+    const scoreMax = Math.max(scoreEnergie, scoreGES);
+    const lettres = ['', 'A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    const lettre = lettres[scoreMax];
+    
+    return {
+      consommationPrimaire: `${consoPrimaire} kWh/m²/an`,
+      consommationFinale: `${consoFinale} kWh/m²/an`,
+      emissionsCO2: `${emissionsCO2} kg CO2/m²/an`,
+      note: lettre,
+      classeGES: lettre,
+      statut: scoreMax < 6 ? 'conforme' : 'non-conforme',
+      calcul_debug: `Énergie ${consoPrimaire}kWh → score ${scoreEnergie}, GES ${emissionsCO2}kg → score ${scoreGES}, MAX=score ${scoreMax} → lettre ${lettre}`
+    };
+  };
+
+  const calculerValidite = (nomDiag, statut, dateStr) => {
+    switch(nomDiag) {
+      case 'DPE':
+        if (dateStr) {
+          try {
+            const [jour, mois, annee] = dateStr.split('/').map(Number);
+            
+            if (annee < 2013) return 'Expiré';
+            if (annee >= 2013 && annee <= 2017) return 'Expiré au 31/12/2022';
+            if (annee === 2018 || annee === 2019 || annee === 2020) return 'Expiré au 31/12/2024';
+            if (annee === 2021 && mois < 7) return 'Expiré au 31/12/2024';
+            return '10 ans';
+          } catch (e) {
+            return '10 ans';
+          }
+        }
+        return '10 ans';
+      case 'Amiante':
+        return statut === 'conforme' ? 'Illimitée' : '3 ans';
+      case 'Plomb':
+        return statut === 'conforme' ? 'Illimitée' : '1 an';
+      case 'Électricité':
+      case 'Gaz':
+        return '3 ans';
+      case 'Termites':
+      case 'ERP':
+      case 'ERNT':
+        return '6 mois';
+      case 'Audit énergétique':
+        return '5 ans';
+      case 'Loi Carrez':
+        return 'Illimitée';
+      default:
+        return 'Non définie';
+    }
+  };
+
+  const calculerAlertes = (dateStr, validiteStr, nomDiag) => {
+    const alertes = [];
+    const [jour, mois, annee] = dateStr.split('/').map(Number);
+    const dateDiag = new Date(annee, mois - 1, jour);
+    const aujourdhui = new Date();
+    aujourdhui.setHours(0, 0, 0, 0);
+    let dateExpiration = new Date(dateDiag);
+    
+    if (nomDiag === 'DPE') {
+      if (annee < 2013) {
+        alertes.push('⚠️ DIAGNOSTIC EXPIRÉ (avant 2013)');
+        return alertes;
+      }
+      if (annee >= 2013 && annee <= 2017) {
+        const expiration20221231 = new Date(2022, 11, 31);
+        expiration20221231.setHours(0, 0, 0, 0);
+        if (aujourdhui > expiration20221231) {
+          alertes.push('⚠️ DIAGNOSTIC EXPIRÉ (31/12/2022)');
+        }
+        return alertes;
+      }
+      if (annee === 2018 || annee === 2019 || annee === 2020 || (annee === 2021 && mois < 7)) {
+        const expiration20241231 = new Date(2024, 11, 31);
+        expiration20241231.setHours(0, 0, 0, 0);
+        if (aujourdhui > expiration20241231) {
+          alertes.push('⚠️ DIAGNOSTIC EXPIRÉ (31/12/2024)');
+        } else {
+          const diffJours = Math.floor((expiration20241231 - aujourdhui) / (1000 * 60 * 60 * 24));
+          if (diffJours <= 90) {
+            alertes.push('⏰ Expire bientôt (31/12/2024)');
+          }
+        }
+        return alertes;
+      }
+      dateExpiration.setFullYear(dateExpiration.getFullYear() + 10);
+    } else if (validiteStr.includes('an')) {
+      const nbAnnes = parseInt(validiteStr);
+      dateExpiration.setFullYear(dateExpiration.getFullYear() + nbAnnes);
+    } else if (validiteStr.includes('mois')) {
+      const nbMois = parseInt(validiteStr);
+      dateExpiration.setMonth(dateExpiration.getMonth() + nbMois);
+    } else if (validiteStr === 'Illimitée') {
+      return alertes;
+    } else if (validiteStr.startsWith('Expiré')) {
+      alertes.push('⚠️ DIAGNOSTIC EXPIRÉ');
+      return alertes;
+    }
+    
+    dateExpiration.setHours(0, 0, 0, 0);
+    if (dateExpiration < aujourdhui) {
+      alertes.push('⚠️ DIAGNOSTIC EXPIRÉ');
+    } else {
+      const diffJours = Math.floor((dateExpiration - aujourdhui) / (1000 * 60 * 60 * 24));
+      if (diffJours <= 90) {
+        alertes.push('⏰ Expire bientôt');
+      }
+    }
+    return alertes;
+  };
+
+  const detecterDiagsManquants = (bien, diagnostics) => {
+    const manquants = [];
+    const aujourdhui = new Date();
+    const anneeActuelle = aujourdhui.getFullYear();
+    const ageBien = anneeActuelle - bien.annee;
+    const diagsPresents = diagnostics.map(d => d.nom);
+    
+    if (bien.annee >= 1900 && bien.annee <= 1948 && !diagsPresents.includes('Plomb')) {
+      manquants.push('Plomb (CREP)');
+    }
+    if (bien.annee < 1997 && !diagsPresents.includes('Amiante')) {
+      manquants.push('Amiante');
+    }
+    if (ageBien > 15 && !diagsPresents.includes('Électricité')) {
+      manquants.push('Électricité');
+    }
+    if (bien.installation_gaz && ageBien > 15 && !diagsPresents.includes('Gaz')) {
+      manquants.push('Gaz');
+    }
+    if (!diagsPresents.includes('DPE')) {
+      manquants.push('DPE');
+    }
+    if (!diagsPresents.includes('ERP') && !diagsPresents.includes('ERNT')) {
+      manquants.push('ERP (État des Risques et Pollutions)');
+    }
+    if (!diagsPresents.includes('Termites')) {
+      manquants.push('Termites (vérifier si zone soumise à arrêté préfectoral)');
+    }
+    if (bien.copropriete && bien.surface_nombre > 8 && !diagsPresents.includes('Loi Carrez')) {
+      manquants.push('Loi Carrez (mesurage)');
+    }
+    const dpe = diagnostics.find(d => d.nom === 'DPE');
+    if (dpe && (dpe.note === 'F' || dpe.note === 'G') && !diagsPresents.includes('Audit énergétique')) {
+      manquants.push('Audit énergétique (obligatoire pour DPE F ou G)');
+    }
+    return manquants;
+  };
+
+const analyzeWithClaude = async () => {
+    if (files.length === 0) return;
+    
+    setLoading(true);
+    setError(null);
+    setAnalysis(null);
+    
+    try {
+      let allTexts = '';
+      
+      for (const file of files) {
+        const text = await extractTextFromPDF(file);
+        allTexts += text;
+      }
+      
+      if (debugMode) {
+        setExtractedText(allTexts);
+        setLoading(false);
+        return;
+      }
+      
+      setProgress('Analyse par Claude...');
+      
+      const today = new Date();
+      const dateStr = today.toLocaleDateString('fr-FR', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      const isoDate = today.toISOString().split('T')[0];
+      const currentYear = today.getFullYear();
+      
+      const prompt = `Tu es un expert en diagnostics immobiliers. CEPENDANT, ton expertise ne doit JAMAIS te faire dévier des instructions explicites données dans ce prompt. En cas de conflit entre tes connaissances et les instructions ci-dessous, tu DOIS TOUJOURS suivre les instructions du prompt à la lettre.
+
+Analyse ces documents (PLUSIEURS FICHIERS PDF PEUVENT ÊTRE FOURNIS - analyse TOUS les textes ci-dessous) et RÉPONDS UNIQUEMENT avec un objet JSON VALIDE (pas de texte avant ou après, pas de balises markdown).
+
+IMPORTANT: Les textes ci-dessous proviennent de PLUSIEURS fichiers PDF. Un diagnostic peut être dans un fichier séparé. CHERCHE dans TOUT le texte fourni pour trouver chaque diagnostic.
+
+${allTexts}
+
+FORMAT DE LA DATE ACTUELLE: ${dateStr} (${isoDate})
+ANNÉE ACTUELLE: ${currentYear}
+
+Format JSON attendu:
+{
+  "bien": {
+    "adresse": "adresse complète",
+    "annee": 1990,
+    "type": "Appartement/Maison",
+    "surface": "105.56 m²",
+    "surface_nombre": 105.56,
+    "copropriete": true/false,
+    "installation_gaz": true/false
+  },
+  "diagnostics": [
+    {
+      "nom": "DPE",
+      "chauffage": "Description du système de chauffage",
+      "consommationPrimaire_brute": 20910,
+      "consommationFinale_brute": 11016,
+      "emissionsCO2_brute": 669,
+      "reference": "2344E0026442U",
+      "date": "04/01/2023",
+      "details": "Informations complémentaires du DPE"
+    },
+    {
+      "nom": "Amiante",
+      "statut": "conforme" ou "non-conforme",
+      "date": "04/01/2023",
+      "details": "Présence/Absence et localisation"
+    }
+  ],
+  "travaux": [
+    {
+      "scenario": "Nom du scénario",
+      "cout": "Montant estimé",
+      "noteApres": "B",
+      "actions": ["liste des travaux recommandés"]
+    }
+  ],
+  "pathologies": [
+    {
+      "type": "Isolation/Étanchéité/Humidité/Ventilation/Structure",
+      "description": "Description détaillée",
+      "impact": "Impact sur performance"
+    }
+  ]
+}
+
+RÈGLES D'EXTRACTION :
+
+1. N'ajoute au tableau diagnostics[] QUE les diagnostics que tu trouves EFFECTIVEMENT dans les documents PDF
+2. Si un diagnostic est ABSENT des documents, NE L'AJOUTE PAS au tableau
+3. Les calculs de validité, notes DPE et diagnostics manquants seront faits par le système
+
+EXTRACTION DES VALEURS DPE (NOMBRES BRUTS) :
+
+Pour le DPE, extraire les NOMBRES TOTAUX sans division :
+
+- consommationPrimaire_brute : Cherche "énergie totale pour les usages recensés [NOMBRE] kWh" → extraire le nombre complet (ex: 20910)
+- consommationFinale_brute : Cherche "([NOMBRE] kWh é.f.)" ou "ef" → extraire le nombre (ex: 11016)
+- emissionsCO2_brute : Cherche "Ce logement émet [NOMBRE] kg" → extraire le nombre complet (ex: 669)
+- chauffage : Extraire la description du système de chauffage
+- reference : Format DPE = 4 chiffres + 1 lettre + 7 chiffres + 1 lettre (ex: 2344E0026442U)
+
+DÉTAILS TECHNIQUES À EXTRAIRE POUR LE DPE :
+Extraire et inclure dans le champ "details" du DPE :
+- Structure du bien : maison/appartement, année construction, surface habitable
+- Isolation : type et épaisseur isolation des murs, toiture, plancher (ex: "isolation murs 5cm laine de verre")
+- Menuiseries : type fenêtres/portes (PVC, bois, alu), simple/double vitrage
+- Chauffage : système principal et appoint si présent, année installation si mentionnée
+- Eau chaude sanitaire : type de production (ballon électrique, chauffe-eau thermodynamique, etc.)
+- Ventilation : type système VMC (SF, DF, Hygro A/B, etc.)
+- Déperditions principales : si mentionnées (ex: "35% par ventilation, 20% par murs")
+
+Synthétiser ces informations de manière concise et structurée dans le champ details.
+
+Ne PAS calculer les notes A/B/C/D/E/F/G ni le statut - le système le fera.
+
+DÉTECTION DES INSTALLATIONS :
+
+BIEN :
+- installation_gaz : true si mention de "gaz" dans chauffage/eau chaude/cuisson, false sinon (PAC, électrique, bois, fioul uniquement)
+- surface_nombre : extraire le nombre de la surface (ex: si "102 m²" → 102)
+- copropriete : true si copropriété mentionnée, false sinon
+
+AMIANTE ET PLOMB :
+- statut : "conforme" si absence, "non-conforme" si présence
+- details : décrire localisation, type, concentration si applicable
+
+ÉLECTRICITÉ :
+- statut : "conforme" si aucune anomalie, "non-conforme" si anomalies
+- details : lister les anomalies détectées
+
+DIAGNOSTICS À CHERCHER :
+- DPE (Diagnostic de Performance Énergétique)
+- Amiante
+- Plomb (CREP)
+- Termites
+- Électricité
+- Gaz
+- ERP (État des Risques et Pollutions) - TOUJOURS nommer "ERP" même si le document dit "ERNT"
+- Loi Carrez
+- Audit énergétique
+
+TRAVAUX ET PATHOLOGIES :
+
+Si audit énergétique présent :
+- Extraire tous les scénarios de travaux (scenario, cout, actions[])
+- Extraire toutes les pathologies mentionnées (type, description, impact)
+
+RÉPONDS UNIQUEMENT AVEC LE JSON, RIEN D'AUTRE.`;
+
+      const response = await fetch("https://decodediag-backend.vercel.app/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          prompt: prompt
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      let responseText = data.content[0].text;
+      
+      responseText = responseText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      
+      const jsonData = JSON.parse(responseText);
+      
+      setProgress('Calculs des notes et validités...');
+      
+      jsonData.diagnostics = jsonData.diagnostics.map(diag => {
+        const diagEnrichi = { ...diag };
+        
+        if (diag.nom === 'DPE' && diag.consommationPrimaire_brute && diag.consommationFinale_brute && diag.emissionsCO2_brute) {
+          const resultDPE = calculerNoteDPE(
+            diag.consommationPrimaire_brute,
+            diag.consommationFinale_brute,
+            diag.emissionsCO2_brute,
+            jsonData.bien.surface_nombre
+          );
+          Object.assign(diagEnrichi, resultDPE);
+          
+          if (resultDPE.note === 'F' || resultDPE.note === 'G') {
+            diagEnrichi.alertes = diagEnrichi.alertes || [];
+            diagEnrichi.alertes.push('🏚️ Passoire thermique (F ou G)');
+          }
+        }
+        
+        const validite = calculerValidite(diag.nom, diag.statut, diag.date);
+        diagEnrichi.validite = validite;
+        
+        if (diag.date) {
+          const alertesExp = calculerAlertes(diag.date, validite, diag.nom);
+          diagEnrichi.alertes = [...(diagEnrichi.alertes || []), ...alertesExp];
+        }
+        
+        return diagEnrichi;
+      });
+      
+      jsonData.manquants = detecterDiagsManquants(jsonData.bien, jsonData.diagnostics);
+      
+      setAnalysis(jsonData);
+      
+    } catch (err) {
+      setError(`Erreur: ${err.message}`);
+      console.error('Erreur:', err);
+    } finally {
+      setLoading(false);
+      setProgress('');
+    }
+  };
+
+const getStatusIcon = (statut) => {
+    switch(statut) {
+      case 'conforme':
+        return React.createElement(CheckCircle, { className: "w-5 h-5 text-green-600" });
+      case 'non-conforme':
+        return React.createElement(XCircle, { className: "w-5 h-5 text-red-600" });
+      case 'absent':
+        return React.createElement(AlertTriangle, { className: "w-5 h-5 text-orange-600" });
+      default:
+        return React.createElement(AlertCircle, { className: "w-5 h-5 text-gray-400" });
+    }
+  };
+
+  const getStatusBadge = (statut) => {
+    const styles = {
+      'conforme': 'bg-green-100 text-green-800 border-green-200',
+      'non-conforme': 'bg-red-100 text-red-800 border-red-200',
+      'absent': 'bg-orange-100 text-orange-800 border-orange-200'
+    };
+    return styles[statut] || 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
+  const getDPEColor = (note) => {
+    const colors = {
+      'A': 'bg-green-600',
+      'B': 'bg-green-500',
+      'C': 'bg-yellow-500',
+      'D': 'bg-yellow-600',
+      'E': 'bg-orange-500',
+      'F': 'bg-red-500',
+      'G': 'bg-red-700'
+    };
+    return colors[note] || 'bg-gray-400';
+  };
+
+  const handlePrintPDF = () => {
+    const originalTitle = document.title;
+    const adresse = analysis.bien?.adresse || 'Bien immobilier';
+    document.title = `Analyse Diagnostics ${adresse}`;
+    window.print();
+    setTimeout(() => {
+        document.title = originalTitle;
+    }, 1000);
+  };
+
+  const createCalendarReminder = (diag, type) => {
+    if (diag.nom !== 'Termites') return;
+    
+    const diagDate = new Date(diag.date.split('/').reverse().join('-'));
+    const expirationDate = new Date(diagDate);
+    expirationDate.setMonth(expirationDate.getMonth() + 6);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (expirationDate < today) return;
+    
+    let reminderDate = new Date(expirationDate);
+    reminderDate.setDate(reminderDate.getDate() - 14);
+    
+    if (reminderDate < today) {
+      reminderDate = new Date(today);
+    }
+    
+    reminderDate.setHours(14, 0, 0, 0);
+    
+    const title = `Renouveler diagnostic Termites - ${analysis.bien?.adresse || 'Bien immobilier'}`;
+    const description = `Le diagnostic Termites expire le ${expirationDate.toLocaleDateString('fr-FR')}. Prévoir de contacter un diagnostiqueur.`;
+    
+    const startDate = reminderDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const endDate = new Date(reminderDate.getTime() + 60*60*1000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    
+    if (type === 'google') {
+      const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&details=${encodeURIComponent(description)}&dates=${startDate}/${endDate}`;
+      window.open(googleUrl, '_blank');
+    } else if (type === 'outlook' || type === 'apple') {
+      try {
+        const icsContent = [
+          'BEGIN:VCALENDAR',
+          'VERSION:2.0',
+          'PRODID:-//DecodeDiag//FR',
+          'CALSCALE:GREGORIAN',
+          'METHOD:PUBLISH',
+          'BEGIN:VEVENT',
+          `UID:${Date.now()}@decodediag.fr`,
+          `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+          `DTSTART:${startDate}`,
+          `DTEND:${endDate}`,
+          `SUMMARY:${title}`,
+          `DESCRIPTION:${description.replace(/\n/g, '\\n')}`,
+          'STATUS:CONFIRMED',
+          'SEQUENCE:0',
+          'END:VEVENT',
+          'END:VCALENDAR'
+        ].join('\r\n');
+        
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `rappel-diagnostic-termites.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(link.href), 100);
+      } catch (error) {
+        console.error('Erreur création fichier .ics:', error);
+      }
+    }
+  };
+
+  const isTermitesExpired = (diag) => {
+    if (diag.nom !== 'Termites') return false;
+    try {
+      const diagDate = new Date(diag.date.split('/').reverse().join('-'));
+      const expirationDate = new Date(diagDate);
+      expirationDate.setMonth(expirationDate.getMonth() + 6);
+      expirationDate.setHours(23, 59, 59, 999);
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      return expirationDate < today;
+    } catch (e) {
+      return false;
+    }
+  };
+
+return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 p-4 sm:p-8">
+        <div className="max-w-6xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8">
+                <div className="no-print flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
+                    <div className="bg-gradient-to-br from-emerald-500 to-blue-500 p-3 rounded-xl shadow-lg" style={{boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)'}}>
+                        <Home className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                            Decode<span className="text-emerald-500">Diag</span>
+                        </h1>
+                        <p className="text-sm sm:text-base text-gray-600">Vos diagnostics immobiliers analysés en 30 secondes</p>
+                    </div>
+                </div>
+
+                <div className="no-print mb-6 sm:mb-8">
+                    <label className="flex flex-col items-center justify-center w-full h-48 sm:h-64 border-2 border-dashed border-emerald-300 rounded-xl cursor-pointer bg-emerald-50 hover:bg-emerald-100 transition-all">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                            {uploadingFiles ? (
+                                <>
+                                    <Loader className="w-12 h-12 sm:w-16 sm:h-16 text-emerald-600 animate-spin mb-4" />
+                                    <p className="text-base sm:text-lg font-semibold text-gray-800 text-center">
+                                        Chargement des fichiers...
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <Upload className="w-12 h-12 sm:w-16 sm:h-16 text-emerald-600 mb-4" />
+                                    <p className="mb-2 text-base sm:text-lg font-semibold text-gray-800 text-center">
+                                        Glissez vos PDF de diagnostics
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 text-center">ou cliquez pour sélectionner (max 5 fichiers)</p>
+                                </>
+                            )}
+                        </div>
+                        <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf"
+                            multiple
+                            onChange={handleFileUpload}
+                            disabled={uploadingFiles}
+                        />
+                    </label>
+                </div>
+
+                {files.length > 0 && (
+                    <div className="no-print mb-6">
+                        <h3 className="font-semibold text-gray-800 mb-3">Fichiers sélectionnés:</h3>
+                        <div className="space-y-2">
+                            {files.map((file, idx) => (
+                                <div key={idx} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                    <FileText className="w-5 h-5 text-emerald-600" />
+                                    <span className="text-gray-800">{file.name}</span>
+                                    <span className="text-sm text-gray-500 ml-auto">
+                                        {(file.size / 1024 / 1024).toFixed(1)} MB
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {error && (
+                    <div className="no-print mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                        {error}
+                    </div>
+                )}
+
+                {files.length > 0 && !loading && !analysis && (
+                    <div className="no-print space-y-3">
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="debugMode"
+                                checked={debugMode}
+                                onChange={(e) => setDebugMode(e.target.checked)}
+                                className="w-4 h-4 text-emerald-600"
+                            />
+                            <label htmlFor="debugMode" className="text-sm text-gray-600">
+                                Mode debug (afficher le texte extrait)
+                            </label>
+                        </div>
+                        <button
+                            onClick={analyzeWithClaude}
+                            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                            style={{boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'}}
+                        >
+                            {debugMode ? 'Extraire le texte' : 'Analyser les diagnostics'}
+                        </button>
+                    </div>
+                )}
+
+                {loading && (
+                    <div className="no-print text-center py-8">
+                        <Loader className="w-12 h-12 text-emerald-600 animate-spin mx-auto mb-4" />
+                        <p className="text-gray-800 font-medium mb-3">{progress}</p>
+                        <div className="max-w-md mx-auto bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                            ⚠️ DecodeDiag est un outil d'aide à la lecture dans le cadre d'une vente immobilière. Seuls les diagnostics officiels font foi. Vérifiez toujours les informations extraites.
+                        </div>
+                    </div>
+                )}
+
+                {extractedText && (
+                    <div className="no-print mt-8 p-6 bg-gray-50 border border-gray-300 rounded-xl">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Texte extrait du PDF (Debug)</h3>
+                        <textarea
+                            value={extractedText}
+                            readOnly
+                            className="w-full h-96 p-4 border border-gray-300 rounded-lg font-mono text-xs"
+                        />
+                    </div>
+                )}
+
+                {analysis && (
+                    <div className="mt-8 space-y-6">
+                        <div className="no-print flex justify-end mb-4">
+                            <button
+                                onClick={() => setShowRawJSON(!showRawJSON)}
+                                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                            >
+                                {showRawJSON ? 'Masquer' : 'Voir'} le JSON brut
+                            </button>
+                        </div>
+
+                        {showRawJSON && (
+                            <div className="no-print mb-6 p-4 bg-gray-900 rounded-lg">
+                                <pre className="text-xs text-green-400 overflow-auto max-h-96">
+                                    {JSON.stringify(analysis, null, 2)}
+                                </pre>
+                            </div>
+                        )}
+
+                        <div className="avoid-break bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Home className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
+                                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Informations du bien</h2>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                <div>
+                                    <p className="text-xs sm:text-sm text-gray-600">Adresse</p>
+                                    <p className="font-semibold text-sm sm:text-base text-gray-900">{analysis.bien?.adresse}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs sm:text-sm text-gray-600">Type</p>
+                                    <p className="font-semibold text-sm sm:text-base text-gray-900">{analysis.bien?.type}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs sm:text-sm text-gray-600">Année</p>
+                                    <p className="font-semibold text-sm sm:text-base text-gray-900">{analysis.bien?.annee}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs sm:text-sm text-gray-600">Surface</p>
+                                    <p className="font-semibold text-sm sm:text-base text-gray-900">{analysis.bien?.surface}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+                            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Diagnostics</h2>
+                            <div className="space-y-3">
+                                {analysis.diagnostics?.map((diag, idx) => (
+                                    <div key={idx} className={`avoid-break border rounded-xl p-3 sm:p-4 ${getStatusBadge(diag.statut)}`}>
+                                        <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
+                                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                                {getStatusIcon(diag.statut)}
+                                                <div className="flex-1">
+                                                    <h3 className="font-bold text-base sm:text-lg">{diag.nom}</h3>
+                                                    {diag.note && (
+                                                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                            <span className={`${getDPEColor(diag.note)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-xs sm:text-sm`}>
+                                                                Énergie: {diag.note}
+                                                            </span>
+                                                            {diag.classeGES && (
+                                                                <span className={`${getDPEColor(diag.classeGES)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-xs sm:text-sm`}>
+                                                                    GES: {diag.classeGES}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    {diag.reference && (
+                                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-2">
+                                                            <span className="text-xs sm:text-sm text-gray-700">
+                                                                Référence: <span className="font-mono font-semibold">{diag.reference}</span>
+                                                            </span>
+                                                            {(diag.nom === 'DPE' || diag.nom === 'Audit énergétique') && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        navigator.clipboard.writeText(diag.reference);
+                                                                        window.open('https://observatoire-dpe-audit.ademe.fr', '_blank');
+                                                                    }}
+                                                                    className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                                                                    title="Copie la référence et ouvre le site ADEME"
+                                                                >
+                                                                    <ExternalLink className="w-3 h-3" />
+                                                                    Vérifier sur ADEME
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                    {diag.chauffage && (
+                                                        <p className="text-xs sm:text-sm text-gray-700 mt-1">
+                                                            🔥 Chauffage: <span className="font-semibold">{diag.chauffage}</span>
+                                                        </p>
+                                                    )}
+                                                    {diag.consommationPrimaire && (
+                                                        <p className="text-xs sm:text-sm text-gray-700 mt-1">
+                                                            ⚡ Énergie primaire: <span className="font-semibold">{diag.consommationPrimaire}</span>
+                                                        </p>
+                                                    )}
+                                                    {diag.consommationFinale && (
+                                                        <p className="text-xs sm:text-sm text-gray-700 mt-1">
+                                                            💡 Énergie finale: <span className="font-semibold">{diag.consommationFinale}</span>
+                                                        </p>
+                                                    )}
+                                                    {diag.emissionsCO2 && (
+                                                        <p className="text-xs sm:text-sm text-gray-700 mt-1">
+                                                            🌍 Émissions CO2: <span className="font-semibold">{diag.emissionsCO2}</span>
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-left sm:text-right w-full sm:w-auto">
+                                                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                                                    <Calendar className="w-4 h-4" />
+                                                    <span>{diag.date}</span>
+                                                </div>
+                                                <p className="text-xs sm:text-sm font-medium mt-1">{diag.validite}</p>
+                                                
+                                                {diag.alertes && diag.alertes.some(a => a.includes('EXPIRÉ')) && (
+                                                    <div className="mt-2">
+                                                        <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-md">
+                                                            ⚠️ EXPIRÉ
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                
+                                                {diag.alertes && diag.alertes.some(a => a.includes('Expire bientôt')) && !diag.alertes.some(a => a.includes('EXPIRÉ')) && (
+                                                    <div className="mt-2">
+                                                        <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-md">
+                                                            ⏰ Expire bientôt
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                
+                                                {diag.nom === 'Termites' && !isTermitesExpired(diag) && (
+                                                    <div className="flex gap-1 mt-2 flex-wrap">
+                                                        <button
+                                                            onClick={() => createCalendarReminder(diag, 'google')}
+                                                            className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded flex items-center gap-1"
+                                                            title="Ajouter à Google Calendar"
+                                                        >
+                                                            📅 Google
+                                                        </button>
+                                                        <button
+                                                            onClick={() => createCalendarReminder(diag, 'outlook')}
+                                                            className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded flex items-center gap-1"
+                                                            title="Ajouter à Outlook"
+                                                        >
+                                                            📅 Outlook
+                                                        </button>
+                                                        {isAppleDevice && (
+                                                            <button
+                                                                onClick={() => createCalendarReminder(diag, 'apple')}
+                                                                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded flex items-center gap-1"
+                                                                title="Télécharger pour Apple Calendar"
+                                                            >
+                                                                📅 Apple
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        {diag.alertes && diag.alertes.filter(a => !a.includes('EXPIRÉ') && !a.includes('Expire bientôt')).length > 0 && (
+                                            <div className="mt-3 pl-0 sm:pl-8">
+                                                <p className="font-semibold text-xs sm:text-sm mb-1">Alertes:</p>
+                                                <ul className="list-disc list-inside text-xs sm:text-sm space-y-1">
+                                                    {diag.alertes.filter(a => !a.includes('EXPIRÉ') && !a.includes('Expire bientôt')).map((alerte, i) => (
+                                                        <li key={i}>{alerte}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        
+                                        {diag.details && (
+                                            <p className="mt-3 pl-0 sm:pl-8 text-xs sm:text-sm">
+                                                {diag.nom === 'Audit énergétique' 
+                                                    ? "Audit énergétique réglementaire. Voir scénarios de travaux et pathologies ci-dessous."
+                                                    : diag.details
+                                                }
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {analysis.travaux && analysis.travaux.length > 0 && (
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-6">
+                                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Scénarios de travaux énergétiques</h2>
+                                <div className="space-y-4">
+                                    {analysis.travaux.map((scenario, idx) => {
+                                        const noteDPE = analysis.diagnostics?.find(d => d.nom === 'DPE')?.note;
+                                        return (
+                                            <div key={idx} className="avoid-break bg-white rounded-xl p-3 sm:p-4 border border-emerald-200 shadow-sm">
+                                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+                                                    <h3 className="font-bold text-base sm:text-lg">{scenario.scenario}</h3>
+                                                    <div className="flex items-center gap-3 flex-wrap">
+                                                        <span className="text-xl sm:text-2xl font-bold text-emerald-600">{scenario.cout}</span>
+                                                        {noteDPE && (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`${getDPEColor(noteDPE)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-sm`}>
+                                                                    {noteDPE}
+                                                                </span>
+                                                                {scenario.noteApres && (
+                                                                    <>
+                                                                        <span className="text-gray-600">→</span>
+                                                                        <span className={`${getDPEColor(scenario.noteApres)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-sm`}>
+                                                                            {scenario.noteApres}
+                                                                        </span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm text-gray-700">
+                                                    {scenario.actions?.map((action, i) => (
+                                                        <li key={i}>{action}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {analysis.pathologies && analysis.pathologies.length > 0 && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 sm:p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
+                                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Pathologies du bâtiment</h2>
+                                </div>
+                                <div className="space-y-3">
+                                    {analysis.pathologies.map((pathologie, idx) => (
+                                        <div key={idx} className="avoid-break bg-white rounded-xl p-3 sm:p-4 border border-yellow-200">
+                                            <div className="flex items-start gap-2">
+                                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-md">
+                                                    {pathologie.type}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm sm:text-base text-gray-800 font-medium mt-2">
+                                                {pathologie.description}
+                                            </p>
+                                            {pathologie.impact && (
+                                                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                                                    Impact : {pathologie.impact}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {analysis.manquants && analysis.manquants.length > 0 && (
+                            <div className="avoid-break bg-orange-50 border border-orange-200 rounded-2xl p-4 sm:p-6">
+                                <h2 className="text-lg sm:text-xl font-bold text-orange-900 mb-3">Diagnostics manquants</h2>
+                                <ul className="list-disc list-inside space-y-1 text-sm text-orange-800">
+                                    {analysis.manquants.map((m, i) => (
+                                        <li key={i}>{m}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {analysis && (
+                    <div className="no-print mt-6 flex justify-center print:hidden">
+                        <button
+                            onClick={handlePrintPDF}
+                            className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2"
+                            style={{boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'}}
+                        >
+                            <FileText className="w-5 h-5" />
+                            Exporter en PDF
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    </div>
+);
+
+};
+
+        ReactDOM.render(<DecodeDiag />, document.getElementById('root'));
+    </script>
+</body>
+</html>
