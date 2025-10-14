@@ -158,6 +158,7 @@ const DecodeDiag = () => {
   const [debugMode, setDebugMode] = useState(false);
   const [extractedText, setExtractedText] = useState('');
   const [showRawJSON, setShowRawJSON] = useState(false);
+  const [analysisCount, setAnalysisCount] = useState(0);
 
   useEffect(() => {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -168,6 +169,10 @@ const DecodeDiag = () => {
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       setPdfjsLib(window.pdfjsLib);
     }
+    
+    // Récupérer le compteur depuis localStorage
+    const count = localStorage.getItem('decodediag_analyses_count');
+    setAnalysisCount(count ? parseInt(count) : 0);
   }, []);
 
 const handleFileUpload = (e) => {
@@ -396,6 +401,14 @@ const calculerNoteDPE = (consoPrimaireBrute, consoFinaleBrute, emissionsCO2Brute
 const analyzeWithClaude = async () => {
     if (files.length === 0) return;
     
+    // Vérifier la limite d'analyses
+    const currentCount = parseInt(localStorage.getItem('decodediag_analyses_count') || '0');
+    
+    if (currentCount >= 2) {
+      setError('🚫 Limite atteinte : Vous avez utilisé vos 2 analyses gratuites. Pour continuer à utiliser DecodeDiag, contactez-nous pour découvrir nos offres !');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setAnalysis(null);
@@ -602,6 +615,11 @@ RÉPONDS UNIQUEMENT AVEC LE JSON, RIEN D'AUTRE.`;
       
       setAnalysis(jsonData);
       
+      // Incrémenter le compteur après succès
+      const newCount = currentCount + 1;
+      localStorage.setItem('decodediag_analyses_count', newCount.toString());
+      setAnalysisCount(newCount);
+      
     } catch (err) {
       setError(`Erreur: ${err.message}`);
       console.error('Erreur:', err);
@@ -746,12 +764,19 @@ return (
                     <div className="bg-gradient-to-br from-emerald-500 to-blue-500 p-3 rounded-xl shadow-lg" style={{boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)'}}>
                         <Home className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                             Decode<span className="text-emerald-500">Diag</span>
                         </h1>
                         <p className="text-sm sm:text-base text-gray-600">Vos diagnostics immobiliers analysés en 30 secondes</p>
                     </div>
+                    {analysisCount > 0 && (
+                        <div className="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-lg">
+                            <p className="text-sm font-medium text-emerald-700">
+                                ✅ {analysisCount}/2 analyse{analysisCount > 1 ? 's' : ''} utilisée{analysisCount > 1 ? 's' : ''}
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="no-print mb-6 sm:mb-8">
@@ -770,7 +795,7 @@ return (
                                     <p className="mb-2 text-base sm:text-lg font-semibold text-gray-800 text-center">
                                         Glissez vos PDF de diagnostics
                                     </p>
-                                    <p className="text-xs sm:text-sm text-gray-600 text-center">ou cliquez pour sélectionner (max 5 fichiers - Pas de scan !)</p>
+                                    <p className="text-xs sm:text-sm text-gray-600 text-center">ou cliquez pour sélectionner (max 5 fichiers)</p>
                                 </>
                             )}
                         </div>
@@ -803,8 +828,21 @@ return (
                 )}
 
                 {error && (
-                    <div className="no-print mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                        {error}
+                    <div className="no-print mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                                <p className="font-medium">{error}</p>
+                                {error.includes('Limite atteinte') && (
+                                    <a 
+                                        href="mailto:contact@decodesolutions.fr?subject=DecodeDiag - Demande d'accès" 
+                                        className="inline-block mt-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                                    >
+                                        Nous contacter
+                                    </a>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -830,7 +868,7 @@ return (
                     </div>
                 )}
 
-                {extractedText && (
+                {extractedText && false && (
                     <div className="no-print mt-8 p-6 bg-gray-50 border border-gray-300 rounded-xl">
                         <h3 className="text-lg font-bold text-gray-900 mb-4">Texte extrait du PDF (Debug)</h3>
                         <textarea
