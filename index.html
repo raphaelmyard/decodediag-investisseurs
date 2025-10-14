@@ -180,7 +180,13 @@ const DecodeDiag = () => {
     
     // Récupérer le compteur depuis localStorage
     const count = localStorage.getItem('decodediag_analyses_count');
-    setAnalysisCount(count ? parseInt(count) : 0);
+    const currentCount = count ? parseInt(count) : 0;
+    setAnalysisCount(currentCount);
+    
+    // Si la limite est atteinte, afficher le message automatiquement
+    if (currentCount >= 2) {
+      setError('🚫 Limite atteinte : Vous avez utilisé vos 2 analyses gratuites. Pour continuer à utiliser DecodeDiag, contactez-nous pour découvrir nos offres !');
+    }
   }, []);
 
 const handleFileUpload = (e) => {
