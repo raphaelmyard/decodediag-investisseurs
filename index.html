@@ -159,6 +159,7 @@ const DecodeDiag = () => {
   const [extractedText, setExtractedText] = useState('');
   const [showRawJSON, setShowRawJSON] = useState(false);
   const [analysisCount, setAnalysisCount] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -192,6 +193,48 @@ const handleFileUpload = (e) => {
     }
     
     setFiles(uploadedFiles);
+    setError(null);
+    setAnalysis(null);
+    
+    setTimeout(() => {
+      setUploadingFiles(false);
+    }, 100);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    setUploadingFiles(true);
+    
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+    
+    if (droppedFiles.length === 0) {
+      setError('Veuillez déposer des fichiers PDF');
+      setUploadingFiles(false);
+      return;
+    }
+    
+    if (droppedFiles.length > 5) {
+      setError('Maximum 5 fichiers PDF');
+      setUploadingFiles(false);
+      return;
+    }
+    
+    setFiles(droppedFiles);
     setError(null);
     setAnalysis(null);
     
@@ -780,7 +823,16 @@ return (
                 </div>
 
                 <div className="no-print mb-6 sm:mb-8">
-                    <label className="flex flex-col items-center justify-center w-full h-48 sm:h-64 border-2 border-dashed border-emerald-300 rounded-xl cursor-pointer bg-emerald-50 hover:bg-emerald-100 transition-all">
+                    <label 
+                        className={`flex flex-col items-center justify-center w-full h-48 sm:h-64 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                            isDragging 
+                                ? 'border-emerald-500 bg-emerald-100' 
+                                : 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100'
+                        }`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                    >
                         <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
                             {uploadingFiles ? (
                                 <>
@@ -793,7 +845,7 @@ return (
                                 <>
                                     <Upload className="w-12 h-12 sm:w-16 sm:h-16 text-emerald-600 mb-4" />
                                     <p className="mb-2 text-base sm:text-lg font-semibold text-gray-800 text-center">
-                                        Glissez vos PDF de diagnostics
+                                        {isDragging ? 'Déposez vos fichiers ici' : 'Glissez vos PDF de diagnostics'}
                                     </p>
                                     <p className="text-xs sm:text-sm text-gray-600 text-center">ou cliquez pour sélectionner (max 5 fichiers)</p>
                                 </>
