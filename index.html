@@ -820,8 +820,8 @@ const getStatusIcon = (statut) => {
 return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 p-4 sm:p-8">
         <div className="max-w-6xl mx-auto">
-            {/* En-tête d'impression */}
-            <div className="print-header">
+            {/* En-tête d'impression - masqué à l'écran */}
+            <div className="print-header" style={{display: 'none'}}>
                 <div className="print-logo">
                     <div className="print-logo-icon">
                         <Home className="w-6 h-6 text-white" style={{stroke: 'white', strokeWidth: '2.5'}} />
@@ -1235,7 +1235,7 @@ return (
                 )}
             </div>
             
-            <footer className="mt-8 pt-6 border-t border-gray-200 text-center">
+            <footer className="mt-8 pt-6 border-t border-gray-200 text-center no-print">
                 <p className="text-sm text-gray-600">
                     Besoin d'aide ? Contactez-nous : <a href="mailto:support@decodesolutions.fr" className="text-emerald-600 hover:text-emerald-700 font-medium">support@decodesolutions.fr</a>
                 </p>
@@ -1244,8 +1244,8 @@ return (
                 </p>
             </footer>
             
-            {/* Pied de page d'impression */}
-            <div className="print-footer">
+            {/* Pied de page d'impression - masqué à l'écran */}
+            <div className="print-footer" style={{display: 'none'}}>
                 Une question sur votre rapport ? Contactez-nous à support@decodesolutions.fr
             </div>
         </div>
