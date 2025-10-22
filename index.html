@@ -287,6 +287,20 @@ const handleFileUpload = (e) => {
   };
 
 const calculerNoteDPE = (consoPrimaireBrute, consoFinaleBrute, emissionsCO2Brute, surfaceNombre) => {
+    // Vérifier que la surface est valide
+    if (!surfaceNombre || surfaceNombre <= 0) {
+      console.error('Surface invalide pour le calcul DPE:', surfaceNombre);
+      return {
+        consommationPrimaire: 'Erreur',
+        consommationFinale: 'Erreur',
+        emissionsCO2: 'Erreur',
+        note: '?',
+        classeGES: '?',
+        statut: 'erreur',
+        calcul_debug: 'Erreur: surface invalide'
+      };
+    }
+    
     const consoPrimaire = Math.floor(consoPrimaireBrute / surfaceNombre);
     const consoFinale = Math.floor(consoFinaleBrute / surfaceNombre);
     const emissionsCO2 = Math.floor(emissionsCO2Brute / surfaceNombre);
@@ -363,6 +377,12 @@ const calculerNoteDPE = (consoPrimaireBrute, consoFinaleBrute, emissionsCO2Brute
 
   const calculerAlertes = (dateStr, validiteStr, nomDiag) => {
     const alertes = [];
+    
+    // Vérifier que les données sont présentes
+    if (!dateStr || !validiteStr) {
+      return alertes;
+    }
+    
     const [jour, mois, annee] = dateStr.split('/').map(Number);
     const dateDiag = new Date(annee, mois - 1, jour);
     const aujourdhui = new Date();
@@ -402,7 +422,7 @@ const calculerNoteDPE = (consoPrimaireBrute, consoFinaleBrute, emissionsCO2Brute
     } else if (validiteStr.includes('mois')) {
       const nbMois = parseInt(validiteStr);
       dateExpiration.setMonth(dateExpiration.getMonth() + nbMois);
-    } else if (validiteStr === 'Illimitée') {
+    } else if (validiteStr === 'Illimitée' || validiteStr === 'Illimitée sauf si travaux') {
       return alertes;
     } else if (validiteStr.startsWith('Expiré')) {
       alertes.push('⚠️ DIAGNOSTIC EXPIRÉ');
@@ -428,7 +448,7 @@ const calculerNoteDPE = (consoPrimaireBrute, consoFinaleBrute, emissionsCO2Brute
     const ageBien = anneeActuelle - bien.annee;
     const diagsPresents = diagnostics.map(d => d.nom);
     
-    if (bien.annee >= 1900 && bien.annee <= 1948 && !diagsPresents.includes('Plomb')) {
+    if (bien.annee < 1949 && !diagsPresents.includes('Plomb')) {
       manquants.push('Plomb (CREP)');
     }
     if (bien.annee < 1997 && !diagsPresents.includes('Amiante')) {
@@ -454,7 +474,21 @@ const calculerNoteDPE = (consoPrimaireBrute, consoFinaleBrute, emissionsCO2Brute
     }
     const dpe = diagnostics.find(d => d.nom === 'DPE');
     if (dpe && (dpe.note === 'F' || dpe.note === 'G') && !diagsPresents.includes('Audit énergétique')) {
-      manquants.push('Audit énergétique (obligatoire pour DPE F ou G)');
+      // Vérifier si le DPE est après le 1er avril 2023 (date d'obligation)
+      if (dpe.date) {
+        try {
+          const [jour, mois, annee] = dpe.date.split('/').map(Number);
+          const dateDPE = new Date(annee, mois - 1, jour);
+          const dateObligatoire = new Date(2023, 3, 1); // 1er avril 2023
+          
+          if (dateDPE >= dateObligatoire) {
+            manquants.push('Audit énergétique (obligatoire pour DPE F ou G depuis avril 2023)');
+          }
+        } catch (e) {
+          // Si erreur de parsing de date, on ajoute quand même l'alerte par sécurité
+          manquants.push('Audit énergétique (obligatoire pour DPE F ou G depuis avril 2023)');
+        }
+      }
     }
     return manquants;
   };
@@ -478,8 +512,13 @@ const analyzeWithClaude = async () => {
       let allTexts = '';
       
       for (const file of files) {
-        const text = await extractTextFromPDF(file);
-        allTexts += text;
+        try {
+          const text = await extractTextFromPDF(file);
+          allTexts += text;
+        } catch (err) {
+          console.error(`Erreur extraction ${file.name}:`, err);
+          allTexts += `\n\n=== ERREUR: Impossible d'extraire le texte de ${file.name} ===\n\n`;
+        }
       }
       
       if (debugMode) {
@@ -639,7 +678,13 @@ RÉPONDS UNIQUEMENT AVEC LE JSON, RIEN D'AUTRE.`;
       
       responseText = responseText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       
-      const jsonData = JSON.parse(responseText);
+      let jsonData;
+      try {
+        jsonData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Erreur parsing JSON:', parseError);
+        throw new Error('Erreur d\'analyse du rapport. Le format de réponse est invalide. Veuillez réessayer.');
+      }
       
       setProgress('Calculs des notes et validités...');
       
@@ -987,17 +1032,6 @@ return (
                         <div className="max-w-md mx-auto bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
                             ⚠️ DecodeDiag est un outil d'aide à la lecture dans le cadre d'une vente immobilière. Seuls les diagnostics officiels font foi. Vérifiez toujours les informations extraites.
                         </div>
-                    </div>
-                )}
-
-                {extractedText && false && (
-                    <div className="no-print mt-8 p-6 bg-gray-50 border border-gray-300 rounded-xl">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Texte extrait du PDF (Debug)</h3>
-                        <textarea
-                            value={extractedText}
-                            readOnly
-                            className="w-full h-96 p-4 border border-gray-300 rounded-lg font-mono text-xs"
-                        />
                     </div>
                 )}
 
