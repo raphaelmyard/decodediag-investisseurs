@@ -185,7 +185,7 @@ const DecodeDiag = () => {
     
     // Si la limite est atteinte, afficher le message automatiquement
     if (currentCount >= 2) {
-      setError('🚫 Limite atteinte : Vous avez utilisé vos 2 analyses gratuites. Pour continuer à utiliser DecodeDiag, contactez-nous pour découvrir nos offres !');
+      setError('🚫 Limite atteinte : Vous avez utilisé vos 2 analyses. Pour continuer à utiliser DecodeDiag, contactez-nous pour découvrir nos offres !');
     }
   }, []);
 
@@ -466,7 +466,7 @@ const analyzeWithClaude = async () => {
     const currentCount = parseInt(localStorage.getItem('decodediag_analyses_count') || '0');
     
     if (currentCount >= 2) {
-      setError('🚫 Limite atteinte : Vous avez utilisé vos 2 analyses gratuites. Pour continuer à utiliser DecodeDiag, contactez-nous pour découvrir nos offres !');
+      setError('🚫 Limite atteinte : Vous avez utilisé vos 2 analyses. Pour continuer à utiliser DecodeDiag, contactez-nous pour découvrir nos offres !');
       return;
     }
     
@@ -817,6 +817,38 @@ const getStatusIcon = (statut) => {
     }
   };
 
+  const formatDetails = (text) => {
+    if (!text) return null;
+    
+    // Séparer en lignes et formater
+    const lines = text
+      .replace(/\. ([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜ])/g, '.\n$1')  // Point + Majuscule = nouveau paragraphe
+      .replace(/- /g, '\n• ')  // Tirets en puces
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+    
+    return lines.map((line, i) => {
+      // Détecter les sections importantes et les mettre en gras
+      const boldKeywords = /(Isolation|Menuiseries|Chauffage|Ventilation|Eau chaude|Structure|Déperditions|VMC|Fenêtres|Murs|Toiture|Plancher):/gi;
+      
+      if (boldKeywords.test(line)) {
+        const parts = line.split(/(:)/);
+        return (
+          <p key={i} className="text-xs sm:text-sm mb-1">
+            {parts.map((part, idx) => 
+              part.match(boldKeywords) || part === ':' 
+                ? <span key={idx} className="font-semibold text-gray-800">{part}</span>
+                : part
+            )}
+          </p>
+        );
+      }
+      
+      return <p key={i} className="text-xs sm:text-sm mb-1">{line}</p>;
+    });
+  };
+
 return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 p-4 sm:p-8">
         <div className="max-w-6xl mx-auto">
@@ -1112,12 +1144,13 @@ return (
                                         )}
                                         
                                         {diag.details && (
-                                            <p className="mt-3 pl-0 sm:pl-8 text-xs sm:text-sm">
-                                                {diag.nom === 'Audit énergétique' 
-                                                    ? "Audit énergétique réglementaire. Voir scénarios de travaux et pathologies ci-dessous."
-                                                    : diag.details
-                                                }
-                                            </p>
+                                            <div className="mt-3 pl-0 sm:pl-8 space-y-1">
+                                                {diag.nom === 'Audit énergétique' ? (
+                                                    <p className="text-xs sm:text-sm">Audit énergétique réglementaire. Voir scénarios de travaux et pathologies ci-dessous.</p>
+                                                ) : (
+                                                    formatDetails(diag.details)
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 ))}
