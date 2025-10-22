@@ -1029,14 +1029,88 @@ return (
                     <div className="no-print text-center py-8">
                         <Loader className="w-12 h-12 text-emerald-600 animate-spin mx-auto mb-4" />
                         <p className="text-gray-800 font-medium mb-3">{progress}</p>
+                        <div className="max-w-md mx-auto bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-700 mb-3">
+                            <p className="font-semibold mb-2">Analyse en cours de vos diagnostics...</p>
+                            <p className="text-xs space-y-1">
+                                ✓ Tous les diagnostics obligatoires sont présents<br/>
+                                ✓ Les dates de validité (aucun diagnostic expiré)<br/>
+                                ✓ Les alertes critiques (amiante, termites, plomb...)<br/>
+                                ✓ Les informations du DPE
+                            </p>
+                        </div>
                         <div className="max-w-md mx-auto bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-                            ⚠️ DecodeDiag est un outil d'aide à la lecture dans le cadre d'une vente immobilière. Seuls les diagnostics officiels font foi. Vérifiez toujours les informations extraites.
+                            ⚠️ DecodeDiag est un outil d'aide à la décision. Seuls les diagnostics officiels font foi.
                         </div>
                     </div>
                 )}
 
                 {analysis && (
                     <div className="mt-8 space-y-6">
+                        {/* SYNTHÈSE GLOBALE */}
+                        <div className={`avoid-break border-2 rounded-2xl p-4 sm:p-6 ${
+                            (analysis.manquants && analysis.manquants.length > 0) || 
+                            (analysis.diagnostics && analysis.diagnostics.some(d => d.alertes && d.alertes.some(a => a.includes('EXPIRÉ'))))
+                            ? 'bg-red-50 border-red-300'
+                            : 'bg-green-50 border-green-300'
+                        }`}>
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                                🛡️ SYNTHÈSE DE VOS DIAGNOSTICS
+                            </h2>
+                            
+                            <div className="space-y-3">
+                                {/* Statut global */}
+                                <div className={`text-lg sm:text-xl font-bold ${
+                                    (analysis.manquants && analysis.manquants.length > 0) || 
+                                    (analysis.diagnostics && analysis.diagnostics.some(d => d.alertes && d.alertes.some(a => a.includes('EXPIRÉ'))))
+                                    ? 'text-red-700'
+                                    : 'text-green-700'
+                                }`}>
+                                    {(analysis.manquants && analysis.manquants.length > 0) || 
+                                     (analysis.diagnostics && analysis.diagnostics.some(d => d.alertes && d.alertes.some(a => a.includes('EXPIRÉ'))))
+                                        ? '⚠️ ATTENTION - VÉRIFICATIONS NÉCESSAIRES'
+                                        : '✅ CONFORME POUR SIGNATURE'
+                                    }
+                                </div>
+                                
+                                {/* Détails */}
+                                <div className="space-y-2 text-sm sm:text-base">
+                                    {(!analysis.manquants || analysis.manquants.length === 0) && (
+                                        <p className="text-gray-700">✅ Tous les diagnostics obligatoires présents</p>
+                                    )}
+                                    {analysis.manquants && analysis.manquants.length > 0 && (
+                                        <p className="text-red-700 font-semibold">⚠️ {analysis.manquants.length} diagnostic(s) manquant(s)</p>
+                                    )}
+                                    
+                                    {analysis.diagnostics && !analysis.diagnostics.some(d => d.alertes && d.alertes.some(a => a.includes('EXPIRÉ'))) && (
+                                        <p className="text-gray-700">✅ Aucun diagnostic expiré</p>
+                                    )}
+                                    {analysis.diagnostics && analysis.diagnostics.some(d => d.alertes && d.alertes.some(a => a.includes('EXPIRÉ'))) && (
+                                        <p className="text-red-700 font-semibold">⚠️ {analysis.diagnostics.filter(d => d.alertes && d.alertes.some(a => a.includes('EXPIRÉ'))).length} diagnostic(s) expiré(s)</p>
+                                    )}
+                                    
+                                    {analysis.diagnostics && analysis.diagnostics.some(d => d.alertes && d.alertes.some(a => a.includes('Expire bientôt'))) && (
+                                        <p className="text-orange-700">⏰ {analysis.diagnostics.filter(d => d.alertes && d.alertes.some(a => a.includes('Expire bientôt'))).length} diagnostic(s) expire(nt) bientôt</p>
+                                    )}
+                                </div>
+                                
+                                {/* Conclusion */}
+                                <div className={`mt-4 pt-4 border-t ${
+                                    (analysis.manquants && analysis.manquants.length > 0) || 
+                                    (analysis.diagnostics && analysis.diagnostics.some(d => d.alertes && d.alertes.some(a => a.includes('EXPIRÉ'))))
+                                    ? 'border-red-200'
+                                    : 'border-green-200'
+                                }`}>
+                                    <p className="text-base sm:text-lg font-semibold text-gray-900">
+                                        {(analysis.manquants && analysis.manquants.length > 0) || 
+                                         (analysis.diagnostics && analysis.diagnostics.some(d => d.alertes && d.alertes.some(a => a.includes('EXPIRÉ'))))
+                                            ? '→ Contactez votre notaire AVANT de signer'
+                                            : '→ Vous pouvez signer sereinement'
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="avoid-break bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-4 sm:p-6 shadow-sm">
                             <div className="flex items-center gap-3 mb-4">
                                 <Home className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
@@ -1322,13 +1396,36 @@ return (
                         )}
 
                         {analysis.manquants && analysis.manquants.length > 0 && (
-                            <div className="avoid-break bg-orange-50 border border-orange-200 rounded-2xl p-4 sm:p-6">
-                                <h2 className="text-lg sm:text-xl font-bold text-orange-900 mb-3">Diagnostics manquants</h2>
-                                <ul className="list-disc list-inside space-y-1 text-sm text-orange-800">
+                            <div className="avoid-break bg-red-50 border-2 border-red-300 rounded-2xl p-4 sm:p-6">
+                                <h2 className="text-lg sm:text-xl font-bold text-red-900 mb-4">⚠️ DIAGNOSTICS MANQUANTS - ACTION REQUISE</h2>
+                                
+                                <p className="text-sm sm:text-base text-red-800 mb-3 font-medium">
+                                    Les diagnostics suivants sont obligatoires mais absents de votre dossier :
+                                </p>
+                                
+                                <ul className="list-disc list-inside space-y-2 text-sm sm:text-base text-red-800 mb-4">
                                     {analysis.manquants.map((m, i) => (
-                                        <li key={i}>{m}</li>
+                                        <li key={i} className="font-medium">{m}</li>
                                     ))}
                                 </ul>
+                                
+                                <div className="bg-white border border-red-200 rounded-lg p-4 mt-4">
+                                    <p className="font-bold text-red-900 mb-2">❗ QUE FAIRE ?</p>
+                                    <p className="text-sm text-gray-700 mb-2">
+                                        Contactez immédiatement votre notaire ou le vendeur pour :
+                                    </p>
+                                    <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 ml-2">
+                                        <li>Vérifier si ces diagnostics existent</li>
+                                        <li>Les obtenir avant la signature du compromis</li>
+                                        <li>Reporter la signature si nécessaire</li>
+                                    </ol>
+                                </div>
+                                
+                                <div className="bg-red-100 border border-red-300 rounded-lg p-3 mt-3">
+                                    <p className="text-xs sm:text-sm text-red-900 font-semibold">
+                                        ⚠️ RISQUE : Une vente peut être annulée si un diagnostic obligatoire est manquant ou invalide.
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>
