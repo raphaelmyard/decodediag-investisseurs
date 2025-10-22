@@ -725,6 +725,19 @@ const getStatusIcon = (statut) => {
     return colors[note] || 'bg-gray-400';
   };
 
+  const getDPEColorHex = (note) => {
+    const colors = {
+      'A': '#059669',
+      'B': '#10b981',
+      'C': '#eab308',
+      'D': '#ca8a04',
+      'E': '#f97316',
+      'F': '#ef4444',
+      'G': '#b91c1c'
+    };
+    return colors[note] || '#9ca3af';
+  };
+
   const handlePrintPDF = () => {
     const originalTitle = document.title;
     const adresse = analysis.bien?.adresse || 'Bien immobilier';
@@ -1027,11 +1040,27 @@ return (
                                                     <h3 className="font-bold text-base sm:text-lg">{diag.nom}</h3>
                                                     {diag.note && (
                                                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                            <span className={`badge-dpe ${getDPEColor(diag.note)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-xs sm:text-sm`}>
+                                                            <span 
+                                                                className={`badge-dpe ${getDPEColor(diag.note)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-xs sm:text-sm`}
+                                                                style={{
+                                                                    backgroundColor: getDPEColorHex(diag.note),
+                                                                    color: 'white',
+                                                                    WebkitPrintColorAdjust: 'exact',
+                                                                    printColorAdjust: 'exact'
+                                                                }}
+                                                            >
                                                                 Énergie: {diag.note}
                                                             </span>
                                                             {diag.classeGES && (
-                                                                <span className={`badge-dpe ${getDPEColor(diag.classeGES)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-xs sm:text-sm`}>
+                                                                <span 
+                                                                    className={`badge-dpe ${getDPEColor(diag.classeGES)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-xs sm:text-sm`}
+                                                                    style={{
+                                                                        backgroundColor: getDPEColorHex(diag.classeGES),
+                                                                        color: 'white',
+                                                                        WebkitPrintColorAdjust: 'exact',
+                                                                        printColorAdjust: 'exact'
+                                                                    }}
+                                                                >
                                                                     GES: {diag.classeGES}
                                                                 </span>
                                                             )}
@@ -1088,7 +1117,15 @@ return (
                                                 
                                                 {diag.alertes && diag.alertes.some(a => a.includes('EXPIRÉ')) && (
                                                     <div className="mt-2">
-                                                        <span className="badge-validite px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-md">
+                                                        <span 
+                                                            className="badge-validite px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-md"
+                                                            style={{
+                                                                backgroundColor: '#dc2626',
+                                                                color: 'white',
+                                                                WebkitPrintColorAdjust: 'exact',
+                                                                printColorAdjust: 'exact'
+                                                            }}
+                                                        >
                                                             ⚠️ EXPIRÉ
                                                         </span>
                                                     </div>
@@ -1096,7 +1133,15 @@ return (
                                                 
                                                 {diag.alertes && diag.alertes.some(a => a.includes('Expire bientôt')) && !diag.alertes.some(a => a.includes('EXPIRÉ')) && (
                                                     <div className="mt-2">
-                                                        <span className="badge-validite px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-md">
+                                                        <span 
+                                                            className="badge-validite px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-md"
+                                                            style={{
+                                                                backgroundColor: '#f97316',
+                                                                color: 'white',
+                                                                WebkitPrintColorAdjust: 'exact',
+                                                                printColorAdjust: 'exact'
+                                                            }}
+                                                        >
                                                             ⏰ Expire bientôt
                                                         </span>
                                                     </div>
@@ -1171,13 +1216,29 @@ return (
                                                         <span className="text-xl sm:text-2xl font-bold text-emerald-600">{scenario.cout}</span>
                                                         {noteDPE && (
                                                             <div className="flex items-center gap-2">
-                                                                <span className={`badge-dpe ${getDPEColor(noteDPE)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-sm`}>
+                                                                <span 
+                                                                    className={`badge-dpe ${getDPEColor(noteDPE)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-sm`}
+                                                                    style={{
+                                                                        backgroundColor: getDPEColorHex(noteDPE),
+                                                                        color: 'white',
+                                                                        WebkitPrintColorAdjust: 'exact',
+                                                                        printColorAdjust: 'exact'
+                                                                    }}
+                                                                >
                                                                     {noteDPE}
                                                                 </span>
                                                                 {scenario.noteApres && (
                                                                     <>
                                                                         <span className="text-gray-600">→</span>
-                                                                        <span className={`badge-dpe ${getDPEColor(scenario.noteApres)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-sm`}>
+                                                                        <span 
+                                                                            className={`badge-dpe ${getDPEColor(scenario.noteApres)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-sm`}
+                                                                            style={{
+                                                                                backgroundColor: getDPEColorHex(scenario.noteApres),
+                                                                                color: 'white',
+                                                                                WebkitPrintColorAdjust: 'exact',
+                                                                                printColorAdjust: 'exact'
+                                                                            }}
+                                                                        >
                                                                             {scenario.noteApres}
                                                                         </span>
                                                                     </>
