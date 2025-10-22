@@ -820,23 +820,8 @@ const getStatusIcon = (statut) => {
 return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 p-4 sm:p-8">
         <div className="max-w-6xl mx-auto">
-            {/* En-tête d'impression - masqué à l'écran */}
-            <div className="print-header">
-                <div className="print-logo">
-                    <div className="print-logo-icon">
-                        <Home className="w-6 h-6 text-white" style={{stroke: 'white', strokeWidth: '2.5'}} />
-                    </div>
-                    <div className="print-logo-text">
-                        Decode<span style={{color: '#10B981'}}>Diag</span>
-                    </div>
-                </div>
-                <div className="print-title">
-                    Rapport d'analyse des diagnostics immobiliers
-                </div>
-            </div>
-            
             <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8">
-                <div className="no-print flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
                     <div className="bg-gradient-to-br from-emerald-500 to-blue-500 p-3 rounded-xl shadow-lg" style={{boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)'}}>
                         <Home className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                     </div>
@@ -847,7 +832,7 @@ return (
                         <p className="text-sm sm:text-base text-gray-600">Vos diagnostics immobiliers analysés en 30 secondes</p>
                     </div>
                     {analysisCount > 0 && (
-                        <div className="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-lg">
+                        <div className="no-print bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-lg">
                             <p className="text-sm font-medium text-emerald-700">
                                 ✅ {analysisCount}/2 analyse{analysisCount > 1 ? 's' : ''} utilisée{analysisCount > 1 ? 's' : ''}
                             </p>
@@ -1235,7 +1220,7 @@ return (
                 )}
             </div>
             
-            <footer className="mt-8 pt-6 border-t border-gray-200 text-center no-print">
+            <footer className="mt-8 pt-6 border-t border-gray-200 text-center">
                 <p className="text-sm text-gray-600">
                     Besoin d'aide ? Contactez-nous : <a href="mailto:support@decodesolutions.fr" className="text-emerald-600 hover:text-emerald-700 font-medium">support@decodesolutions.fr</a>
                 </p>
@@ -1243,11 +1228,6 @@ return (
                     © 2025 DecodeSolutions - Tous droits réservés
                 </p>
             </footer>
-            
-            {/* Pied de page d'impression - masqué à l'écran */}
-            <div className="print-footer">
-                Une question sur votre rapport ? Contactez-nous à support@decodesolutions.fr
-            </div>
         </div>
     </div>
 );
