@@ -1027,11 +1027,11 @@ return (
                                                     <h3 className="font-bold text-base sm:text-lg">{diag.nom}</h3>
                                                     {diag.note && (
                                                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                            <span className={`${getDPEColor(diag.note)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-xs sm:text-sm`}>
+                                                            <span className={`badge-dpe ${getDPEColor(diag.note)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-xs sm:text-sm`}>
                                                                 Énergie: {diag.note}
                                                             </span>
                                                             {diag.classeGES && (
-                                                                <span className={`${getDPEColor(diag.classeGES)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-xs sm:text-sm`}>
+                                                                <span className={`badge-dpe ${getDPEColor(diag.classeGES)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-xs sm:text-sm`}>
                                                                     GES: {diag.classeGES}
                                                                 </span>
                                                             )}
@@ -1088,7 +1088,7 @@ return (
                                                 
                                                 {diag.alertes && diag.alertes.some(a => a.includes('EXPIRÉ')) && (
                                                     <div className="mt-2">
-                                                        <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-md">
+                                                        <span className="badge-validite px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-md">
                                                             ⚠️ EXPIRÉ
                                                         </span>
                                                     </div>
@@ -1096,7 +1096,7 @@ return (
                                                 
                                                 {diag.alertes && diag.alertes.some(a => a.includes('Expire bientôt')) && !diag.alertes.some(a => a.includes('EXPIRÉ')) && (
                                                     <div className="mt-2">
-                                                        <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-md">
+                                                        <span className="badge-validite px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-md">
                                                             ⏰ Expire bientôt
                                                         </span>
                                                     </div>
@@ -1171,13 +1171,13 @@ return (
                                                         <span className="text-xl sm:text-2xl font-bold text-emerald-600">{scenario.cout}</span>
                                                         {noteDPE && (
                                                             <div className="flex items-center gap-2">
-                                                                <span className={`${getDPEColor(noteDPE)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-sm`}>
+                                                                <span className={`badge-dpe ${getDPEColor(noteDPE)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-sm`}>
                                                                     {noteDPE}
                                                                 </span>
                                                                 {scenario.noteApres && (
                                                                     <>
                                                                         <span className="text-gray-600">→</span>
-                                                                        <span className={`${getDPEColor(scenario.noteApres)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-sm`}>
+                                                                        <span className={`badge-dpe ${getDPEColor(scenario.noteApres)} text-white px-2 sm:px-3 py-1 rounded-md font-bold text-sm`}>
                                                                             {scenario.noteApres}
                                                                         </span>
                                                                     </>
