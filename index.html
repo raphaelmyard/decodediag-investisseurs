@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DecodeDiag - Analyseur de diagnostics immobiliers</title>
+    <title>DecodeDiag MVP - Analyseur de diagnostics immobiliers</title>
     
     <!-- React 18 -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -820,6 +820,21 @@ const getStatusIcon = (statut) => {
 return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 p-4 sm:p-8">
         <div className="max-w-6xl mx-auto">
+            {/* En-tête d'impression */}
+            <div className="print-header">
+                <div className="print-logo">
+                    <div className="print-logo-icon">
+                        <Home className="w-6 h-6 text-white" style={{stroke: 'white', strokeWidth: '2.5'}} />
+                    </div>
+                    <div className="print-logo-text">
+                        Decode<span style={{color: '#10B981'}}>Diag</span>
+                    </div>
+                </div>
+                <div className="print-title">
+                    Rapport d'analyse des diagnostics immobiliers
+                </div>
+            </div>
+            
             <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8">
                 <div className="no-print flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
                     <div className="bg-gradient-to-br from-emerald-500 to-blue-500 p-3 rounded-xl shadow-lg" style={{boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)'}}>
@@ -912,7 +927,7 @@ return (
                                 <p className="font-medium">{error}</p>
                                 {error.includes('Limite atteinte') && (
                                     <a 
-                                        href="mailto:support@decodesolutions.fr?subject=DecodeDiag - Demande d'accès" 
+                                        href="mailto:contact@decodesolutions.fr?subject=DecodeDiag - Demande d'accès" 
                                         className="inline-block mt-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
                                     >
                                         Nous contacter
@@ -1222,12 +1237,17 @@ return (
             
             <footer className="mt-8 pt-6 border-t border-gray-200 text-center">
                 <p className="text-sm text-gray-600">
-                    Besoin d'aide ? Contactez-nous : <a href="mailto:support@decodesolutions.fr" className="text-emerald-600 hover:text-emerald-700 font-medium">contact@decodesolutions.fr</a>
+                    Besoin d'aide ? Contactez-nous : <a href="mailto:support@decodesolutions.fr" className="text-emerald-600 hover:text-emerald-700 font-medium">support@decodesolutions.fr</a>
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                     © 2025 DecodeSolutions - Tous droits réservés
                 </p>
             </footer>
+            
+            {/* Pied de page d'impression */}
+            <div className="print-footer">
+                Une question sur votre rapport ? Contactez-nous à support@decodesolutions.fr
+            </div>
         </div>
     </div>
 );
